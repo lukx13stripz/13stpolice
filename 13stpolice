@@ -1,0 +1,296 @@
+-- UI Creation Script (13ST CRIPZ Search & Tool Stealer)
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local CoreGui = game:GetService("CoreGui")
+
+local LocalPlayer = Players.LocalPlayer
+local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
+
+-- Hanapin ang Police folder sa ReplicatedStorage
+local PoliceFolder = ReplicatedStorage:WaitForChild("Police", 5)
+if not PoliceFolder then
+    warn("13ST Network: 'Police' folder not found in ReplicatedStorage!")
+    return
+end
+
+local SearchEvent = PoliceFolder:WaitForChild("Search", 5)
+local ConfiscateEvent = PoliceFolder:WaitForChild("Confiscate", 5)
+
+-- Main UI Container para sa listahan natin
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "13stSearchGui"
+ScreenGui.ResetOnSpawn = false
+
+local success, err = pcall(function()
+    ScreenGui.Parent = CoreGui
+end)
+if not success then
+    ScreenGui.Parent = PlayerGui
+end
+
+-- Main Frame
+local MainFrame = Instance.new("Frame")
+MainFrame.Size = UDim2.new(0, 320, 0, 380)
+MainFrame.Position = UDim2.new(0.5, -160, 0.5, -190)
+MainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+MainFrame.BorderSizePixel = 0
+MainFrame.Active = true
+MainFrame.Draggable = true
+MainFrame.Parent = ScreenGui
+
+local MainCorner = Instance.new("UICorner")
+MainCorner.CornerRadius = UDim.new(0, 12)
+MainCorner.Parent = MainFrame
+
+-- Header Bar
+local Header = Instance.new("Frame")
+Header.Size = UDim2.new(1, 0, 0, 45)
+Header.BackgroundColor3 = Color3.fromRGB(204, 0, 0)
+Header.BorderSizePixel = 0
+Header.Parent = MainFrame
+
+local HeaderCorner = Instance.new("UICorner")
+HeaderCorner.CornerRadius = UDim.new(0, 12)
+HeaderCorner.Parent = Header
+
+local HeaderFix = Instance.new("Frame")
+HeaderFix.Size = UDim2.new(1, 0, 0, 10)
+HeaderFix.Position = UDim2.new(0, 0, 1, -10)
+HeaderFix.BackgroundColor3 = Color3.fromRGB(204, 0, 0)
+HeaderFix.BorderSizePixel = 0
+HeaderFix.Parent = Header
+
+-- Header Title
+local Title = Instance.new("TextLabel")
+Title.Size = UDim2.new(1, -20, 1, 0)
+Title.Position = UDim2.new(0, 15, 0, 0)
+Title.BackgroundTransparency = 1
+Title.Text = "POLICE SEARCH 13ST CRIPZ"
+Title.TextColor3 = Color3.fromRGB(255, 255, 255)
+Title.Font = Enum.Font.SourceSansBold
+Title.TextSize = 16
+Title.TextXAlignment = Enum.TextXAlignment.Left
+Title.Parent = Header
+
+-- Close Button (X)
+local CloseBtn = Instance.new("TextButton")
+CloseBtn.Size = UDim2.new(0, 30, 0, 30)
+CloseBtn.Position = UDim2.new(1, -35, 0, 7)
+CloseBtn.BackgroundTransparency = 1
+CloseBtn.Text = "X"
+CloseBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+CloseBtn.Font = Enum.Font.SourceSansBold
+CloseBtn.TextSize = 16
+CloseBtn.Parent = Header
+
+CloseBtn.MouseButton1Click:Connect(function()
+    local CloseEvent = PoliceFolder:FindFirstChild("Close")
+    if CloseEvent then CloseEvent:FireServer() end
+    ScreenGui:Destroy()
+end)
+
+-- Sub-status
+local StatusLabel = Instance.new("TextLabel")
+StatusLabel.Size = UDim2.new(1, 0, 0, 20)
+StatusLabel.Position = UDim2.new(0, 0, 0, 50)
+StatusLabel.BackgroundTransparency = 1
+StatusLabel.Text = "Remote Status: Steal Mode Active"
+StatusLabel.TextColor3 = Color3.fromRGB(0, 180, 0)
+StatusLabel.Font = Enum.Font.SourceSans
+StatusLabel.TextSize = 12
+StatusLabel.Parent = MainFrame
+
+-- Scrolling Frame para sa Player List
+local PlayerList = Instance.new("ScrollingFrame")
+PlayerList.Size = UDim2.new(1, -20, 0, 200)
+PlayerList.Position = UDim2.new(0, 10, 0, 75)
+PlayerList.BackgroundTransparency = 1
+PlayerList.BorderSizePixel = 0
+PlayerList.CanvasSize = UDim2.new(0, 0, 0, 0)
+PlayerList.ScrollBarThickness = 4
+PlayerList.ScrollBarImageColor3 = Color3.fromRGB(204, 0, 0)
+PlayerList.Parent = MainFrame
+
+local ListLayout = Instance.new("UIListLayout")
+ListLayout.Padding = UDim.new(0, 6)
+ListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+ListLayout.Parent = PlayerList
+
+local selectedPlayer = nil
+
+-- Action Button (13ST CRIPZ SEARCH)
+local ActionBtn = Instance.new("TextButton")
+ActionBtn.Size = UDim2.new(1, -20, 0, 45)
+ActionBtn.Position = UDim2.new(0, 10, 1, -55)
+ActionBtn.BackgroundColor3 = Color3.fromRGB(170, 0, 0)
+ActionBtn.Text = "SELECT A PLAYER"
+ActionBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+ActionBtn.Font = Enum.Font.SourceSansBold
+ActionBtn.TextSize = 16
+ActionBtn.Parent = MainFrame
+
+local ActionCorner = Instance.new("UICorner")
+ActionCorner.CornerRadius = UDim.new(0, 8)
+ActionCorner.Parent = ActionBtn
+
+local function updateActionButton(playerName)
+    ActionBtn.Text = "13ST CRIPZ SEARCH " .. string.upper(playerName)
+end
+
+local function createPlayerRow(player)
+    if player == LocalPlayer then return end
+    
+    local Row = Instance.new("TextButton")
+    Row.Name = player.Name
+    Row.Size = UDim2.new(1, -6, 0, 35)
+    Row.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+    Row.BorderSizePixel = 0
+    Row.Text = "     " .. player.Name
+    Row.TextColor3 = Color3.fromRGB(200, 200, 200)
+    Row.Font = Enum.Font.SourceSans
+    Row.TextSize = 14
+    Row.TextXAlignment = Enum.TextXAlignment.Left
+    Row.Parent = PlayerList
+    
+    local RowCorner = Instance.new("UICorner")
+    RowCorner.CornerRadius = UDim.new(0, 6)
+    RowCorner.Parent = Row
+    
+    local Icon = Instance.new("ImageLabel")
+    Icon.Size = UDim2.new(0, 14, 0, 14)
+    Icon.Position = UDim2.new(0, 8, 0, 10)
+    Icon.BackgroundTransparency = 1
+    Icon.Image = "rbxassetid://11419714316"
+    Icon.ImageColor3 = Color3.fromRGB(0, 120, 255)
+    Icon.Parent = Row
+
+    Row.MouseButton1Click:Connect(function()
+        for _, child in pairs(PlayerList:GetChildren()) do
+            if child:IsA("TextButton") then
+                child.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+            end
+        end
+        Row.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+        selectedPlayer = player
+        updateActionButton(player.Name)
+    end)
+    
+    PlayerList.CanvasSize = UDim2.new(0, 0, 0, ListLayout.AbsoluteContentSize.Y)
+end
+
+local function refreshList()
+    for _, child in pairs(PlayerList:GetChildren()) do
+        if child:IsA("TextButton") then child:Destroy() end
+    end
+    for _, player in pairs(Players:GetPlayers()) do
+        createPlayerRow(player)
+    end
+end
+
+Players.PlayerAdded:Connect(refreshList)
+Players.PlayerRemoving:Connect(function(player)
+    if selectedPlayer == player then
+        selectedPlayer = nil
+        ActionBtn.Text = "SELECT A PLAYER"
+    end
+    refreshList()
+end)
+
+refreshList()
+
+-- Function para i-override at lagyan ng Steal logic ang mga lumilitaw na slots
+local function attachStealLogic(searchGuiInstance, targetPlayer)
+    local function applyToButton(button)
+        if button:IsA("TextButton") or button:IsA("ImageButton") then
+            -- Huwag galawin ang labas na close button ng laro
+            if button.Name ~= "Close" and button.Name ~= "Exit" then
+                
+                -- Siguraduhing makikita mo ang Tool Name sa interface ng SearchGui
+                if button:IsA("TextButton") and (button.Text == "" or button.Text == " ") then
+                    button.Text = button.Name
+                else
+                    local nestedLabel = button:FindFirstChildOfClass("TextLabel")
+                    if nestedLabel and (nestedLabel.Text == "" or nestedLabel.Text == " ") then
+                        nestedLabel.Text = button.Name
+                    end
+                end
+                
+                -- Pag-click sa tool, ite-takeover natin para maging "Steal" action
+                button.MouseButton1Click:Connect(function()
+                    if ConfiscateEvent and targetPlayer then
+                        -- I-fire ang event para piliting ilipat ng server ang tool sa iyo
+                        ConfiscateEvent:FireServer(targetPlayer, button.Name)
+                        print("13ST Network: Stealing tool -> " .. button.Name)
+                        button:Destroy() -- Tanggalin sa UI list dahil nakuha mo na
+                    end
+                end)
+            end
+        end
+    end
+
+    -- I-apply sa mga nakasulat na ngayon
+    for _, obj in pairs(searchGuiInstance:GetDescendants()) do
+        applyToButton(obj)
+    end
+
+    -- Abangan kung may mga bagong tool slots na gagawin ang laro habang naglo-load
+    local guiConnection
+    guiConnection = searchGuiInstance.DescendantAdded:Connect(function(newObj)
+        if not searchGuiInstance:IsDescendantOf(game) then
+            guiConnection:Disconnect()
+            return
+        end
+        task.wait(0.1)
+        applyToButton(newObj)
+    end)
+end
+
+-- MAIN TRIGGER: Pag-click ng 13ST CRIPZ SEARCH
+ActionBtn.MouseButton1Click:Connect(function()
+    if selectedPlayer then
+        local SearchGui = PlayerGui:FindFirstChild("SearchGui")
+        
+        if SearchGui then
+            -- Isaksak ang target player sa configuration values ng SearchGui ng laro
+            for _, val in pairs(SearchGui:GetDescendants()) do
+                if val:IsA("StringValue") then
+                    val.Value = selectedPlayer.Name
+                elseif val:IsA("ObjectValue") then
+                    val.Value = selectedPlayer
+                end
+            end
+            
+            -- I-update ang header label ng laro
+            for _, lbl in pairs(SearchGui:GetDescendants()) do
+                if lbl:IsA("TextLabel") and (string.find(string.lower(lbl.Text), "search") or lbl.Name == "PlayerName" or lbl.Name == "Title") then
+                    lbl.Text = "13ST CRIPZ STEALER: " .. string.upper(selectedPlayer.Name)
+                end
+            end
+
+            -- Buksan at gawing visible ang mismong SearchGui ng laro
+            if SearchGui:IsA("ScreenGui") then
+                SearchGui.Enabled = true
+            end
+            for _, child in pairs(SearchGui:GetChildren()) do
+                if child:IsA("Frame") or child:IsA("ScrollingFrame") then
+                    child.Visible = true
+                end
+            end
+            
+            -- Ikonekta ang pagnanakaw ng tools
+            attachStealLogic(SearchGui, selectedPlayer)
+        else
+            warn("13ST Network: 'SearchGui' not found inside PlayerGui!")
+        end
+        
+        -- Utusan ang server na hilahin ang data ng imbentaryo ng biktima papunta sa screen mo
+        if SearchEvent then
+            SearchEvent:FireServer(selectedPlayer)
+        end
+        
+    else
+        ActionBtn.Text = "CHOOSE A PLAYER FIRST!"
+        task.wait(1)
+        if selectedPlayer then updateActionButton(selectedPlayer.Name) else ActionBtn.Text = "SELECT A PLAYER" end
+    end
+end)
